@@ -15,7 +15,7 @@ import java.util.Arrays;
  * @date 2026/1/21
  */
 public class ModbusRtuReader {
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         // 配置串口（必须与 Modbus Slave 完全一致！）
         String portName = "COM4"; // （Linux: "/dev/ttyUSB0"）
         SerialPort serialPort = SerialPort.getCommPort(portName);
@@ -54,7 +54,6 @@ public class ModbusRtuReader {
 
         } catch (Exception e) {
             System.err.println("💥 通信失败: " + e.getMessage());
-            e.printStackTrace();
         } finally {
             serialPort.closePort();
         }
