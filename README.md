@@ -12,6 +12,6 @@
 
 ### 第一部分：工业通信基础篇
 1. [从零开始学 Modbus：用 Java 零距离体验工业通信！-搞懂寄存器、协议地址、RTU vs TCP，再动手读写，一篇全掌握！](https://mp.weixin.qq.com/s/OjTlEyptimqN44HlYzsMPA) ✅
-2. [Modbus 地址总搞混？别再死记 40001=0！设计一个 Java 工具类彻底理清](https://mp.weixin.qq.com/s/sDzzosuAHpLYfB2wQ8VgEw)
+2. [Modbus 地址总搞混？别再死记 40001=0！设计一个 Java 工具类彻底理清](https://mp.weixin.qq.com/s/sDzzosuAHpLYfB2wQ8VgEw)✅
 3. [Modbus over Serial：用 Java 读取 RS485 设备（真实场景 + jSerialComm 实战）](https://mp.weixin.qq.com/s/gNF-oyGKco8UqsDGr653zQ)✅
 
