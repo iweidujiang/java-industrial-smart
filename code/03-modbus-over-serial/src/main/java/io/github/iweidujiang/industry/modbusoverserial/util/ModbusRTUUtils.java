@@ -9,7 +9,7 @@ import java.util.Arrays;
  * GitHub:  https://github.com/iweidujiang
  * 公众号: 苏渡苇
  *
- * @date 2026/1/21 *
+ * @date 2026/1/21
  */
 public class ModbusRTUUtils {
 
