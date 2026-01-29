@@ -5,12 +5,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.annotation.ServiceActivator;
+import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.config.EnableIntegration;
-import org.springframework.integration.dsl.MessageChannels;
-import org.springframework.integration.mqtt.core.MqttPahoClientFactory;
+import org.springframework.integration.mqtt.core.DefaultMqttPahoClientFactory;
 import org.springframework.integration.mqtt.outbound.MqttPahoMessageHandler;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.MessageHandler;
 
 /**
  * 配置 MQTT
@@ -31,29 +30,40 @@ public class MqttConfig {
     @Value("${mqtt.client-id:modbus-gateway}")
     private String clientId;
 
-    // 创建 MQTT 出站通道适配器
+    // 创建消息通道
     @Bean
     public MessageChannel mqttOutboundChannel() {
-        return MessageChannels.direct().get();
+        return new DirectChannel();
     }
 
-    // 创建 MQTT 连接选项（EMQX 支持匿名连接）
-    private MqttConnectOptions getMqttConnectOptions() {
+    // 创建 MQTT 连接选项
+    @Bean
+    public MqttConnectOptions mqttConnectOptions() {
         MqttConnectOptions options = new MqttConnectOptions();
         options.setServerURIs(new String[]{brokerUrl});
         options.setAutomaticReconnect(true);
-        options.setCleanSession(false); // 保留会话，避免重复订阅
+        options.setCleanSession(false);
         return options;
     }
 
-    // 创建 MQTT 出站处理器
+    // 创建 MQTT 客户端工厂
+    @Bean
+    public DefaultMqttPahoClientFactory mqttClientFactory() {
+        DefaultMqttPahoClientFactory factory = new DefaultMqttPahoClientFactory();
+        factory.setConnectionOptions(mqttConnectOptions());
+        return factory;
+    }
+
+    // 创建出站处理器
     @Bean
     @ServiceActivator(inputChannel = "mqttOutboundChannel")
-    public MessageHandler mqttOutbound() {
+    public MqttPahoMessageHandler mqttOutbound() {
+        // 构造函数只接受 clientId 和 clientFactory
         MqttPahoMessageHandler messageHandler =
-                new MqttPahoMessageHandler(clientId, (MqttPahoClientFactory) getMqttConnectOptions());
+                new MqttPahoMessageHandler(clientId, mqttClientFactory());
+
         messageHandler.setDefaultTopic("devices/thermostat/telemetry");
-        messageHandler.setAsync(true); // 异步发送，不阻塞主线程
+        messageHandler.setAsync(true);
         return messageHandler;
     }
 }

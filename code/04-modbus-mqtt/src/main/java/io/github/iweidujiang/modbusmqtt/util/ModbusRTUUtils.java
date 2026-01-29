@@ -27,22 +27,31 @@ public class ModbusRTUUtils {
         serialPort.openPort();
 
         try {
-            // 构造 Modbus RTU 请求：设备ID=1, 功能码=3 (读保持寄存器), 地址=0, 数量=1
-            byte[] request = {0x01, 0x03, 0x00, 0x00, 0x00, 0x01, (byte) 0xCD, (byte) 0xCA};
-            serialPort.writeBytes(request, request.length);
+            // 构造请求帧：[0x01][0x03][0x00][0x00][0x00][0x01][CRC高][CRC低]
+//            byte[] request = {0x01, 0x03, 0x00, 0x00, 0x00, 0x01, (byte) 0xCD, (byte) 0xCA};
+            byte[] request = buildReadHoldingRegistersFrame(1, 0, 1);
+//            System.out.println("📤 发送请求: " + bytesToHex(request));
 
-            Thread.sleep(100); // 等待响应
+            // 发送并等待响应（简单延时，工业场景可优化）
+            serialPort.getOutputStream().write(request);
+            serialPort.getOutputStream().flush();
 
-            byte[] response = new byte[9];
-            int read = serialPort.readBytes(response, response.length);
-            if (read < 7) throw new RuntimeException("响应过短");
+            Thread.sleep(100); // 等待设备响应（Modbus RTU 响应通常 < 50ms）
 
-            // 解析温度：寄存器值 / 10.0
-            ByteBuffer buffer = ByteBuffer.wrap(response);
-            buffer.order(ByteOrder.BIG_ENDIAN);
-            buffer.position(3); // 跳过设备ID、功能码、字节数
-            int rawValue = buffer.getShort() & 0xFFFF;
-            return rawValue / 10.0;
+            // 读取响应
+            byte[] buffer = new byte[256];
+            int len = serialPort.getInputStream().read(buffer);
+            if (len <= 0) {
+                throw new RuntimeException("未收到响应");
+            }
+            byte[] response = Arrays.copyOf(buffer, len);
+//            System.out.println("📥 收到响应: " + bytesToHex(response));
+
+            // 🔍 解析温度值
+            int rawValue = ModbusRTUUtils.extractRegisterValue(response);
+            double temperature = rawValue / 10.0; // 缩放因子：×10 存储
+//            System.out.printf("✅ 当前温度: %.1f ℃\n", temperature);
+            return temperature;
         } finally {
             serialPort.closePort();
         }
@@ -96,5 +105,13 @@ public class ModbusRTUUtils {
             throw new RuntimeException("非预期的功能码: " + (response[1] & 0xFF));
         }
         return ((response[3] & 0xFF) << 8) | (response[4] & 0xFF);
+    }
+
+    private static String bytesToHex(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) {
+            sb.append(String.format("%02X ", b & 0xFF));
+        }
+        return sb.toString().trim();
     }
 }
