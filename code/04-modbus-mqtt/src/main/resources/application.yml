@@ -1,0 +1,7 @@
+mqtt:
+  broker-url: tcp://localhost:1883
+  client-id: modbus-gateway-${random.uuid}
+
+spring:
+  main:
+    allow-bean-definition-overriding: true

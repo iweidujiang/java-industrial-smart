@@ -7,7 +7,7 @@
     <artifactId>04-modbus-mqtt</artifactId>
     <version>0.0.1-SNAPSHOT</version>
 
-    <name>modbus-over-serial</name>
+    <name>modbus-mqtt</name>
     <description>从 Modbus 到 MQTT：用 Java 搭建工业数据桥梁</description>
 
     <properties>
@@ -17,10 +17,23 @@
         <spring-boot.version>2.7.18</spring-boot.version>
     </properties>
     <dependencies>
+        <!-- jSerialComm: 串口通信 -->
         <dependency>
             <groupId>com.fazecast</groupId>
             <artifactId>jSerialComm</artifactId>
             <version>2.10.4</version>
+        </dependency>
+
+        <!-- Spring Integration MQTT -->
+        <dependency>
+            <groupId>org.springframework.integration</groupId>
+            <artifactId>spring-integration-mqtt</artifactId>
+        </dependency>
+
+        <!-- JSON 处理 -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
         </dependency>
 
         <dependency>
