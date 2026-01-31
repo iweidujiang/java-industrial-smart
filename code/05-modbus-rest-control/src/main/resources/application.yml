@@ -1,0 +1,8 @@
+server:
+  port: 8080
+
+# 可将串口参数在此配置
+# modbus:
+#   serial-port: COM4
+#   baud-rate: 9600
+#   device-id: 1
