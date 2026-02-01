@@ -1,0 +1,22 @@
+devices:
+  - name: "注塑机-西门子"
+    protocol: "siemens-s7"
+    host: "192.168.1.100"
+    port: 102
+    points:
+      - name: "料筒温度"
+        address: "DB1.DBW20"
+        dataType: "REAL"
+      - name: "循环次数"
+        address: "DB1.DBD24"
+        dataType: "DINT"
+
+  - name: "锅炉-Modbus"
+    protocol: "modbus"
+    serialPort: "/dev/ttyUSB0"
+    baudRate: 9600
+    deviceId: 1
+    points:
+      - name: "水位百分比"
+        address: "100"
+        dataType: "UINT16"

@@ -1,0 +1,12 @@
+# Spring Boot 应用配置
+server:
+  port: 8080
+
+# 日志级别
+logging:
+  level:
+    io.github.iweidujiang.industry: DEBUG
+
+# PLC 配置文件路径（可选）
+plc:
+  config-file: "plc-config.yml"
