@@ -1,0 +1,42 @@
+server:
+  port: 8087
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/industrial_db?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: 111111
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: devRed1s
+
+
+mybatis-plus:
+  mapper-locations: classpath:mapper/**/*.xml
+  type-aliases-package: io.github.iweidujiang.industry.prediction.model
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      table-prefix: t_
+      id-type: auto
+
+# 异常预判核心配置（可根据设备调整）
+prediction:
+  history:
+    days: 30    # 统计最近30天正常数据
+    count: 50   # 最小历史数据量（避免统计不准）
+  fluctuation:
+    threshold: 0.1 # 波动阈值10%（平均值±10%为正常）
+  realtime:
+    interval: 5 # 每5分钟预判一次
+  update:
+    interval: 1440 # 每天更新一次历史阈值
+  status:
+    normal: 0   # 正常
+    warning: 1  # 预警（有趋势）
+    abnormal: 2 # 异常（已超标）
