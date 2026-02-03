@@ -1,15 +1,19 @@
 package io.github.iweidujiang.industry.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.iweidujiang.industry.model.AlarmRecord;
 import io.github.iweidujiang.industry.model.DataPointValue;
 import io.github.iweidujiang.industry.websocket.SpringWebSocketHandler;
 import io.github.iweidujiang.industry.websocket.WebSocketMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -31,32 +35,40 @@ import java.util.concurrent.ThreadLocalRandom;
 @Service
 public class MockDataGenerator {
 
-    @Autowired
-    private SimpMessagingTemplate messagingTemplate;
+    private final RedisTemplate<String, String> redisTemplate;
+    private final ObjectMapper objectMapper;
+    private final AlertService alertService;
 
-    private final Random random = new Random();
+    public MockDataGenerator(RedisTemplate<String, String> redisTemplate,
+                             ObjectMapper objectMapper,
+                             AlertService alertService) {
+        this.redisTemplate = redisTemplate;
+        this.objectMapper = objectMapper;
+        this.alertService = alertService;
+    }
 
-    // 每 2 秒推送一次设备数据
-//    @Scheduled(fixedDelay = 2000)
-    public void broadcastDeviceData() {
+    @Scheduled(fixedRate = 1000)
+    public void generateMockData() {
+        double temperature = 60 + Math.sin(System.currentTimeMillis() / 2000.0) * 5;
+        double pressure = 0.8 + Math.random() * 0.05;
+
+        Map<String, Double> values = Map.of("温度", temperature, "压力", pressure);
+
         try {
-            Map<String, Object> data = new HashMap<>();
-            data.put("temperature", 50 + random.nextDouble() * 20); // 50～70℃
-            data.put("pressure", 0.6 + random.nextDouble() * 0.4);  // 0.6～1.0 MPa
-            data.put("deviceId", "mock-boiler");
-            data.put("timestamp", Instant.now().toString());
+            String json = objectMapper.writeValueAsString(values);
+            redisTemplate.opsForValue().set(
+                    "device:mock-boiler:latest",
+                    json,
+                    Duration.ofSeconds(10)
+            );
 
-            WebSocketMessage message = new WebSocketMessage();
-            message.setType("DEVICE_DATA");
-            message.setData(data);
-            message.setTimestamp(Instant.now().toString());
+            if (temperature > 68) {
+                alertService.triggerAlert("mock-boiler", "温度过高", String.format("%.1f℃", temperature));
+            }
 
-            // 推送到特定设备 topic
-            messagingTemplate.convertAndSend("/topic/device/mock-boiler", message);
-            log.debug("📡 推送设备数据: {}", data);
-
-        } catch (Exception e) {
-            log.error("推送设备数据失败", e);
+            log.debug("💾 写入模拟数据: {}", values);
+        } catch (JsonProcessingException e) {
+            log.error("生成模拟数据失败", e);
         }
     }
 }

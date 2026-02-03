@@ -1,88 +1,137 @@
-<!-- src/views/Dashboard.vue -->
 <template>
-  <div class="dashboard" style="padding: 20px;">
-    <h2>工业监控仪表盘（HTTP 轮询）</h2>
-    <div ref="chartRef" style="width: 100%; height: 400px;"></div>
-    <p v-if="loading">正在加载...</p>
+  <div class="dashboard">
+    <div class="metrics">
+      <div class="metric-card">
+        <h3>当前温度</h3>
+        <p class="value">{{ latestValues?.温度?.toFixed(1) || '--' }} ℃</p>
+      </div>
+      <div class="metric-card">
+        <h3>当前压力</h3>
+        <p class="value">{{ latestValues?.压力?.toFixed(2) || '--' }} MPa</p>
+      </div>
+    </div>
+    <div ref="chartContainer" class="chart"></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import {ref, onMounted, onUnmounted, computed} from 'vue'
 import * as echarts from 'echarts'
+import { useDataStore } from '../stores/dataStore'
 
-const chartRef = ref<HTMLDivElement | null>(null)
-const loading = ref(true)
-let chart: any = null
-let pollInterval: number | null = null
+// ✅ 正确获取 store 并解构 state
+const store = useDataStore()
+const latestValues = computed(() => store.latestValues)
 
-// 初始化 ECharts
-function initChart() {
-  if (!chartRef.value) return
-  chart = echarts.init(chartRef.value)
-  chart.setOption({
-    tooltip: { trigger: 'axis' },
-    legend: { data: ['温度 (℃)', '压力 (MPa)'] },
-    xAxis: { type: 'category', data: [] },
-    yAxis: [
-      { name: '℃', min: 50, max: 70 },
-      { name: 'MPa', min: 0.6, max: 1.0 }
-    ],
-    series: [
-      { name: '温度 (℃)', type: 'line', yAxisIndex: 0, data: [], smooth: true },
-      { name: '压力 (MPa)', type: 'line', yAxisIndex: 1, data: [], smooth: true }
-    ]
-  })
-}
-
-// 从后端获取最新数据
-async function fetchLatestData() {
-  try {
-    const res = await fetch('http://localhost:8080/api/data/latest')
-    if (!res.ok) throw new Error('HTTP error')
-    const data = await res.json()
-
-    loading.value = false
-
-    // 更新图表
-    const now = new Date().toLocaleTimeString()
-    const option = chart.getOption()
-
-    option.xAxis[0].data.push(now)
-    option.series[0].data.push(data.temperature)
-    option.series[1].data.push(data.pressure)
-
-    if (option.xAxis[0].data.length > 20) {
-      option.xAxis[0].data.shift()
-      option.series[0].data.shift()
-      option.series[1].data.shift()
-    }
-
-    chart.setOption(option)
-  } catch (e) {
-    console.error('❌ 获取数据失败:', e)
-  }
-}
-
-// 启动定时轮询
-function startPolling() {
-  fetchLatestData() // 立即获取一次
-  pollInterval = window.setInterval(fetchLatestData, 2000) // 每 2 秒
-}
+const chartContainer = ref<HTMLDivElement | null>(null)
+let chart: echarts.ECharts | null = null
+let timer: number | null = null
 
 onMounted(() => {
   initChart()
   startPolling()
+  console.log('🚀 初始化最新值:', store.latestValues)
 })
 
 onUnmounted(() => {
-  if (pollInterval) clearInterval(pollInterval)
+  if (timer) clearInterval(timer)
   if (chart) chart.dispose()
 })
+
+function initChart() {
+  if (!chartContainer.value) return
+  chart = echarts.init(chartContainer.value)
+
+  const option = {
+    tooltip: { trigger: 'axis' },
+    legend: { data: ['温度 (℃)', '压力 (MPa)'], bottom: 0 },
+    grid: { left: '3%', right: '4%', bottom: '15%', top: '10%', containLabel: true },
+    xAxis: {
+      type: 'category',
+      boundaryGap: false,
+      data: [] as string[]
+    },
+    yAxis: [
+      { type: 'value', name: '温度 (℃)', min: 55, max: 70, position: 'left' },
+      { type: 'value', name: '压力 (MPa)', min: 0.75, max: 0.9, position: 'right' }
+    ],
+    series: [
+      {
+        name: '温度 (℃)',
+        type: 'line',
+        yAxisIndex: 0,
+        data: [] as number[],
+        smooth: true,
+        lineStyle: { width: 2, color: '#f87171' },
+        symbol: 'none'
+      },
+      {
+        name: '压力 (MPa)',
+        type: 'line',
+        yAxisIndex: 1,
+        data: [] as number[],
+        smooth: true,
+        lineStyle: { width: 2, color: '#60a5fa' },
+        symbol: 'none'
+      }
+    ]
+  }
+  chart.setOption(option)
+}
+
+function startPolling() {
+  const poll = () => {
+    store.fetchLatest('mock-boiler')
+    updateChart()
+  }
+  poll() // immediate
+  timer = window.setInterval(poll, 1000)
+}
+
+function updateChart() {
+  if (!chart) return
+
+  const tempData = store.history.temperature.map(p => p.value)
+  const pressData = store.history.pressure.map(p => p.value)
+  const timeData = store.history.temperature.map(p => p.time)
+
+  chart.setOption({
+    xAxis: { data: timeData },
+    series: [
+      { data: tempData },
+      { data: pressData }
+    ]
+  })
+}
 </script>
 
 <style scoped>
 .dashboard {
-  background: #f5f7fa;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.metrics {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+}
+.metric-card {
+  background: #1e293b;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  min-width: 180px;
+}
+.value {
+  font-size: 2em;
+  margin: 10px 0;
+  color: #f87171;
+}
+.chart {
+  height: 400px;
+  background: #1e293b;
+  border-radius: 8px;
+  padding: 10px;
 }
 </style>
