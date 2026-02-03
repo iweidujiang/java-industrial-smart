@@ -62,8 +62,14 @@ public class MockDataGenerator {
                     Duration.ofSeconds(10)
             );
 
-            if (temperature > 68) {
+            // 温度超过 60 触发告警
+            if (temperature > 6) {
                 alertService.triggerAlert("mock-boiler", "温度过高", String.format("%.1f℃", temperature));
+            }
+
+            // 压力低于 0.75 MPa 触发告警
+            if (pressure < 0.75) {
+                alertService.triggerAlert("mock-boiler", "压力过低", String.format("%.2f MPa", pressure));
             }
 
             log.debug("💾 写入模拟数据: {}", values);

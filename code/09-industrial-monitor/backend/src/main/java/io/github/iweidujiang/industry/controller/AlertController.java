@@ -3,6 +3,7 @@ package io.github.iweidujiang.industry.controller;
 import io.github.iweidujiang.industry.model.Alert;
 import io.github.iweidujiang.industry.service.AlertService;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -17,6 +18,7 @@ import java.util.List;
  * @date 2026/2/3
  */
 @RestController
+@RequestMapping("/api/alerts")
 public class AlertController {
     private final AlertService alertService;
 
@@ -24,7 +26,7 @@ public class AlertController {
         this.alertService = alertService;
     }
 
-    @GetMapping("/api/alerts")
+    @GetMapping("/recent")
     public List<Alert> getAlerts() {
         return alertService.getRecentAlerts();
     }

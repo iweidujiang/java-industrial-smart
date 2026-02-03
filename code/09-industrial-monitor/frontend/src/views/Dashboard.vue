@@ -19,13 +19,22 @@ import {ref, onMounted, onUnmounted, computed} from 'vue'
 import * as echarts from 'echarts'
 import { useDataStore } from '../stores/dataStore'
 
-// ✅ 正确获取 store 并解构 state
+// 获取 store 并解构 state
 const store = useDataStore()
 const latestValues = computed(() => store.latestValues)
 
 const chartContainer = ref<HTMLDivElement | null>(null)
 let chart: echarts.ECharts | null = null
 let timer: number | null = null
+
+// 告警状态
+interface Alert {
+  id: string
+  message: string
+  value: string
+}
+const currentAlert = ref<Alert | null>(null)
+const shownAlertIds = new Set<string>()
 
 onMounted(() => {
   initChart()
@@ -79,10 +88,42 @@ function initChart() {
   chart.setOption(option)
 }
 
+// 获取最新告警
+async function fetchAlerts() {
+  try {
+    const res = await fetch('/api/alerts/recent')
+    if (res.ok) {
+      const alerts: Alert[] = await res.json()
+      // 查找未展示的新告警
+      for (const alert of alerts) {
+        if (!shownAlertIds.has(alert.id)) {
+          shownAlertIds.add(alert.id)
+          currentAlert.value = alert
+          // 5秒后自动关闭
+          setTimeout(() => {
+            if (currentAlert.value?.id === alert.id) {
+              closeAlert()
+            }
+          }, 5000)
+          break // 只显示最新一条
+        }
+      }
+    }
+  } catch (err) {
+    console.error('❌ 获取告警失败:', err)
+  }
+}
+
+// 关闭告警
+function closeAlert() {
+  currentAlert.value = null
+}
+
 function startPolling() {
   const poll = () => {
     store.fetchLatest('mock-boiler')
     updateChart()
+    fetchAlerts()
   }
   poll() // immediate
   timer = window.setInterval(poll, 1000)

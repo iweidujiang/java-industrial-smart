@@ -30,7 +30,7 @@ let alertIdCounter = 0
 onMounted(() => {
   const pollAlerts = async () => {
     try {
-      const res = await fetch('/api/alerts')
+      const res = await fetch('/api/alerts/recent')
       const alerts = await res.json()
       // Show only new alerts
       alerts.forEach((a: any) => {
