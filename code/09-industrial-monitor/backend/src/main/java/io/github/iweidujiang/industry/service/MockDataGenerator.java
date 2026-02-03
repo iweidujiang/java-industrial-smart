@@ -2,13 +2,19 @@ package io.github.iweidujiang.industry.service;
 
 import io.github.iweidujiang.industry.model.AlarmRecord;
 import io.github.iweidujiang.industry.model.DataPointValue;
-import io.github.iweidujiang.industry.websocket.DataWebSocket;
+import io.github.iweidujiang.industry.websocket.SpringWebSocketHandler;
+import io.github.iweidujiang.industry.websocket.WebSocketMessage;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -25,45 +31,32 @@ import java.util.concurrent.ThreadLocalRandom;
 @Service
 public class MockDataGenerator {
 
-    private final AlarmRecordService alarmRecordService;
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
-    // 模拟设备ID
-    private static final String MOCK_DEVICE_ID = "mock-boiler";
+    private final Random random = new Random();
 
-    public MockDataGenerator(AlarmRecordService alarmRecordService) {
-        this.alarmRecordService = alarmRecordService;
-    }
+    // 每 2 秒推送一次设备数据
+//    @Scheduled(fixedDelay = 2000)
+    public void broadcastDeviceData() {
+        try {
+            Map<String, Object> data = new HashMap<>();
+            data.put("temperature", 50 + random.nextDouble() * 20); // 50～70℃
+            data.put("pressure", 0.6 + random.nextDouble() * 0.4);  // 0.6～1.0 MPa
+            data.put("deviceId", "mock-boiler");
+            data.put("timestamp", Instant.now().toString());
 
-    @Scheduled(fixedRate = 1000)
-    public void generateAndPush() {
-        double temperature = 60 + ThreadLocalRandom.current().nextDouble(-5, 5);
-        double pressure = 0.8 + ThreadLocalRandom.current().nextDouble(-0.1, 0.1);
+            WebSocketMessage message = new WebSocketMessage();
+            message.setType("DEVICE_DATA");
+            message.setData(data);
+            message.setTimestamp(Instant.now().toString());
 
-        Map<String, Object> values = new ConcurrentHashMap<>();
-        values.put("温度", temperature);
-        values.put("压力", pressure);
+            // 推送到特定设备 topic
+            messagingTemplate.convertAndSend("/topic/device/mock-boiler", message);
+            log.debug("📡 推送设备数据: {}", data);
 
-        DataPointValue data = new DataPointValue();
-        data.setDeviceId(MOCK_DEVICE_ID);
-        data.setTimestamp(System.currentTimeMillis());
-        data.setValues(values);
-
-        // 推送
-        DataWebSocket.pushToSubscribers(MOCK_DEVICE_ID, data);
-        log.debug("📡 模拟数据推送: 温度={}℃, 压力={}MPa", temperature, pressure);
-
-        // 简单告警检查
-        if (temperature > 65) {
-            AlarmRecord alarm = new AlarmRecord();
-            alarm.setDeviceId(MOCK_DEVICE_ID);
-            alarm.setPointName("温度");
-            alarm.setCurrentValue(temperature);
-            alarm.setThreshold(65.0);
-            alarm.setLevel("WARNING");
-            alarm.setAcknowledged(false);
-            alarm.setCreateTime(LocalDateTime.now());
-            alarmRecordService.save(alarm);
-            log.warn("⚠️ 触发告警: 温度超限 ({}℃ > 65℃)", temperature);
+        } catch (Exception e) {
+            log.error("推送设备数据失败", e);
         }
     }
 }
