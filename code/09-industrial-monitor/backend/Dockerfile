@@ -10,7 +10,7 @@ RUN apk add --no-cache tzdata && \
 WORKDIR /app
 
 # 复制 JAR 文件
-COPY target/industrial-monitor-1.0.0.jar ./app.jar
+COPY target/monitor-backend.jar ./app.jar
 
 # 暴露端口
 EXPOSE 8080
