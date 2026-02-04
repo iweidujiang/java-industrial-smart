@@ -9,7 +9,8 @@ spring:
     password:
   data:
     redis:
-      host: localhost
+      # 改为服务名（Docker Compose 内置 DNS）
+      host: redis
       port: 6379
       password: devRed1s
 

@@ -1,5 +1,5 @@
-# 使用官方 OpenJDK 17 JRE（轻量）
-FROM eclipse-temurin:17-jre-alpine
+# 使用官方 OpenJDK 21 JRE（轻量）
+FROM eclipse-temurin:21-jre-alpine
 
 # 设置中国时区（工业系统必备）
 RUN apk add --no-cache tzdata && \
