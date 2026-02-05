@@ -18,6 +18,8 @@
 5. [用 Spring Boot 项目给工厂装“遥控器”：一行 API 控制现场设备(Modbus协议)！](https://mp.weixin.qq.com/s/JZMN1MCIVhhoe9K94fwlaA)✅
 6. [多品牌 PLC 混合采集？用 Java 构建统一接入层，一套代码通吃全场！](https://mp.weixin.qq.com/s/Sm61DBU_9U_G0THZ1i91Aw)✅
 7. [Java + Redis + MySQL：工业时序数据缓存与持久化实战（适配高频采集场景）](https://mp.weixin.qq.com/s/wg6X1k2RPdsyNNy6MjfHFw)✅
-8. 轻量化AI落地：Java + Spring Boot 实现设备异常预判
-9. 工业数据可视化进阶：Java + ECharts 实现设备趋势图、预警图
+8. [轻量化AI落地：Java + Spring Boot 实现设备异常预判](https://mp.weixin.qq.com/s/dbmyeu_Tzm0qbqf3S-LwZg)✅
+9. [让数据“活”起来！用 Java（Spring Boot） + Vue 3 打造工业监控大屏](https://mp.weixin.qq.com/s/83Up-pGcb4uhzEsLAmatfQ)✅
+10. 部署工业监控大屏项目——Docker 与 Kubernetes 双方案实战
+11. SpringBoot+Vue打造数字孪生：温湿度环境的智能仿真
 
