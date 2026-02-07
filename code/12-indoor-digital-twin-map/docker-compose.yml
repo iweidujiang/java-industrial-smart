@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: industrial-redis-12
+    ports:
+      - "6379:6379"
+    volumes:
+      - E:/docker_service_data/java_industrial_redis_12:/data
+    command:
+      - "redis-server"
+      - "--requirepass"
+      - "devRed1s"
+      - "--appendonly"
+      - "yes"
+    restart: unless-stopped
+
+  backend:
+    image: indoor-digital-twin-map-backend:local
+    container_name: indoor-digital-twin-map-backend
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOST=redis
+    restart: always
+
+  frontend:
+    image: indoor-digital-twin-map-frontend:local
+    container_name: indoor-digital-twin-map-frontend
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    restart: always
